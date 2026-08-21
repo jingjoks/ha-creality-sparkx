@@ -1,0 +1,59 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to your Creality printer",
+        "description": "Enter the local IP address of your Creality SPARKX / K-series printer.",
+        "data": {
+          "host": "IP address"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach the printer at that address. Check the IP and that the printer is on the same network."
+    },
+    "abort": {
+      "already_configured": "This printer is already configured."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "nozzle_temperature": { "name": "Nozzle temperature" },
+      "nozzle_target_temperature": { "name": "Nozzle target temperature" },
+      "bed_temperature": { "name": "Bed temperature" },
+      "bed_target_temperature": { "name": "Bed target temperature" },
+      "print_progress": { "name": "Print progress" },
+      "print_state": {
+        "name": "Print state",
+        "state": {
+          "idle": "Idle",
+          "printing": "Printing",
+          "paused": "Paused",
+          "completed": "Completed",
+          "error": "Error",
+          "self_test": "Self test",
+          "leveling": "Leveling",
+          "heating": "Heating",
+          "unknown": "Unknown"
+        }
+      },
+      "current_file": { "name": "Current file" },
+      "current_layer": { "name": "Current layer" },
+      "total_layers": { "name": "Total layers" },
+      "print_time_elapsed": { "name": "Print time elapsed" },
+      "print_time_remaining": { "name": "Print time remaining" },
+      "lifetime_material_used": { "name": "Lifetime material used" },
+      "lifetime_print_time": { "name": "Lifetime print time" },
+      "model_fan_speed": { "name": "Model fan speed" },
+      "case_fan_speed": { "name": "Case fan speed" }
+    },
+    "binary_sensor": {
+      "filament_present": { "name": "Filament present" },
+      "problem": { "name": "Problem" },
+      "connectivity": { "name": "Connectivity" }
+    },
+    "switch": {
+      "chamber_light": { "name": "Chamber light" }
+    }
+  }
+}
