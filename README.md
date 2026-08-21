@@ -20,6 +20,12 @@ errors on setup.
 - **Lifetime stats** — total material used, total print time (disabled by
   default, enable in entity settings if you want them).
 - **Chamber light switch** — turn the printer's light on/off from HA.
+  ⚠️ Confirmed that the printer silently ignores this command while a print
+  job is actively running (verified by testing the raw WebSocket command
+  directly against the printer, bypassing Home Assistant entirely — the
+  light state simply doesn't change and the printer's own confirmation
+  response is absent). This appears to be a firmware-level restriction, not
+  a bug in this integration. Works normally while idle.
 - **Binary sensors** — filament presence, problem/error flag, and a
   connectivity sensor so automations can react to the printer going offline.
 - **Local push** — no polling. The printer pushes updates as they happen, so
@@ -87,6 +93,19 @@ port/schema, this integration probably won't connect out of the box — try
 one of those projects instead. If your printer uses port 80 like the
 SPARKX i7, this should work; please open an issue either way with your
 `/info` output so compatibility can be tracked.
+
+## Known limitations
+
+- **Commands may be ignored mid-print.** The chamber light switch (and
+  possibly other control commands not yet implemented here) appear to be
+  rejected by the printer's firmware while a print job is actively running.
+  The WebSocket still responds with routine status pushes, but not a
+  confirmation of the requested change, and the actual state doesn't move.
+  This was confirmed by testing the raw `{"lightSw": 1}` command directly
+  against the printer over a plain WebSocket connection, with the same
+  result — so it's a printer-side restriction, not something this
+  integration can work around. Try again once the print finishes or the
+  printer is idle.
 
 ## Disclaimer
 
