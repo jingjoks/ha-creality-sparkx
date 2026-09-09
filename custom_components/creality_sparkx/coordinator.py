@@ -283,25 +283,38 @@ class CrealitySparkXCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     # -------------------------------------------------------------------
 
     async def async_webrtc_offer(self, offer_sdp: str) -> str | None:
-        """POST a full SDP offer to the printer's local WebRTC endpoint, get the answer SDP back."""
-        session = async_get_clientsession(self.hass)
+        """POST a full SDP offer to the printer's local WebRTC endpoint, get the answer SDP back.
+
+        Deliberately does NOT use HA's shared, connection-pooling client
+        session here. The printer's own WebRTC signaling server is a tiny
+        embedded HTTP server that does not support keep-alive - it closes
+        the TCP connection after every response. Reusing a pooled
+        connection from HA's shared session (keyed by host, meant for
+        real HTTP servers) intermittently hands back a connection the
+        printer already closed on its end, which surfaces as
+        "Server disconnected" / "Connection reset by peer" - not a real
+        offer/answer failure, just a stale-connection reuse bug. A
+        dedicated, single-use connection per offer avoids this entirely.
+        """
         url = f"http://{self.host}:{self.camera_port}{WEBRTC_OFFER_PATH}"
         body = base64.b64encode(
             json.dumps({"type": "offer", "sdp": offer_sdp}).encode()
         )
+        connector = aiohttp.TCPConnector(force_close=True, limit=1, enable_cleanup_closed=True)
         try:
-            async with session.post(
-                url,
-                data=body,
-                headers={"Content-Type": "plain/text"},
-                timeout=aiohttp.ClientTimeout(total=10),
-            ) as resp:
-                if resp.status >= 400:
-                    _LOGGER.warning(
-                        "Camera WebRTC offer to %s failed: HTTP %s", url, resp.status
-                    )
-                    return None
-                raw = await resp.text()
+            async with aiohttp.ClientSession(connector=connector) as session:
+                async with session.post(
+                    url,
+                    data=body,
+                    headers={"Content-Type": "plain/text", "Connection": "close"},
+                    timeout=aiohttp.ClientTimeout(total=10),
+                ) as resp:
+                    if resp.status >= 400:
+                        _LOGGER.warning(
+                            "Camera WebRTC offer to %s failed: HTTP %s", url, resp.status
+                        )
+                        return None
+                    raw = await resp.text()
         except (aiohttp.ClientError, TimeoutError) as err:
             _LOGGER.warning("Camera WebRTC offer to %s failed: %s", url, err)
             return None

@@ -29,6 +29,12 @@
  * anything not configured (or not present in this HA install) are simply
  * not shown, so the same card works whether or not you set up the
  * optional power-switch binding, camera, etc.
+ *
+ * Media row: if camera_entity is set, the card embeds HA's own
+ * <ha-camera-stream> element (the same element the built-in camera card
+ * uses) for a genuine live view (WebRTC/HLS, whichever HA negotiates for
+ * that entity) - not a polled snapshot. image_entity (the slicer-embedded
+ * print-preview thumbnail) is shown alongside it, smaller, when configured.
  */
 
 class CrealitySparkXCard extends HTMLElement {
@@ -50,7 +56,7 @@ class CrealitySparkXCard extends HTMLElement {
   }
 
   getCardSize() {
-    return this._config.camera_entity ? 6 : 4;
+    return this._config.camera_entity ? 8 : 4;
   }
 
   _fmtDuration(seconds) {
@@ -94,8 +100,11 @@ class CrealitySparkXCard extends HTMLElement {
         .title { font-size: 1.1em; font-weight: 500; }
         .state { font-size: 0.95em; padding: 2px 10px; border-radius: 12px; background: var(--secondary-background-color); }
         .state.problem { background: var(--error-color, #db4437); color: white; }
-        .media-row { display: flex; gap: 10px; margin-bottom: 10px; }
-        .media-row img, .media-row hui-image, .media-row ha-camera-stream { border-radius: 8px; max-width: 50%; }
+        .media-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
+        .media-row img { border-radius: 8px; max-width: 100%; display: block; }
+        .media-row ha-camera-stream { border-radius: 8px; overflow: hidden; display: block; background: #000; }
+        .media-row .preview-wrap { flex: 0 0 auto; max-width: 35%; }
+        .media-row .preview-wrap img { width: 100%; }
         .progress-wrap { background: var(--divider-color); border-radius: 6px; height: 10px; overflow: hidden; margin: 10px 0 4px; }
         .progress-bar { height: 100%; background: ${accent}; transition: width 0.5s ease; }
         .meta-row { display: flex; justify-content: space-between; font-size: 0.85em; color: var(--secondary-text-color); margin-bottom: 10px; }
@@ -135,27 +144,62 @@ class CrealitySparkXCard extends HTMLElement {
       : "unavailable";
     statePill.className = "state" + (problemOn ? " problem" : "");
 
-    // Media row: camera (if streaming) else preview image, whichever is configured.
+    // Media row: a genuine live <ha-camera-stream> (WebRTC/HLS, whatever HA
+    // negotiates) when camera_entity is configured, plus the smaller
+    // slicer-thumbnail preview image alongside it when image_entity is set.
+    // Built once; the stream element then just gets fresh .hass/.stateObj
+    // on every update, same as HA's own picture-entity/camera cards do.
     const mediaRow = root.getElementById("media-row");
     if (!mediaRow.dataset.built) {
-      let mediaHtml = "";
-      if (c.camera_entity && hass.states[c.camera_entity]) {
-        mediaHtml += `<img id="camera-img" alt="camera" />`;
+      mediaRow.innerHTML = "";
+      const haveCamera = c.camera_entity && hass.states[c.camera_entity];
+      const havePreview = c.image_entity && hass.states[c.image_entity];
+      if (haveCamera) {
+        const streamEl = document.createElement("ha-camera-stream");
+        streamEl.id = "camera-stream";
+        streamEl.style.flex = "1 1 auto";
+        streamEl.style.minWidth = "0";
+        streamEl.style.width = "100%";
+        streamEl.muted = true;
+        streamEl.controls = false;
+        streamEl.allowExifRotation = true;
+        mediaRow.appendChild(streamEl);
+
+        // Some printers' embedded WebRTC signaling servers are unreliable
+        // with a genuine browser SDP offer (observed: the SPARKX i7's own
+        // endpoint intermittently resets the connection on a real offer
+        // while happily accepting small synthetic ones - a firmware-side
+        // quirk, not something fixable from here). Rather than leaving an
+        // indefinite blank/black box when that happens, give it a few
+        // seconds then fall back to just the preview thumbnail (if any).
+        setTimeout(() => {
+          const player = streamEl.shadowRoot?.querySelector("ha-web-rtc-player, ha-hls-player");
+          const video = player?.shadowRoot?.querySelector("video");
+          const connected = video && (video.readyState >= 2 || video.videoWidth > 0);
+          if (!connected) {
+            streamEl.style.display = "none";
+            const previewWrap = mediaRow.querySelector(".preview-wrap");
+            if (previewWrap) previewWrap.style.maxWidth = "100%";
+          }
+        }, 6000);
       }
-      if (c.image_entity && hass.states[c.image_entity]) {
-        mediaHtml += `<img id="preview-img" alt="preview" />`;
+      if (havePreview) {
+        const wrap = document.createElement("div");
+        wrap.className = "preview-wrap";
+        if (!haveCamera) wrap.style.maxWidth = "50%";
+        const img = document.createElement("img");
+        img.id = "preview-img";
+        img.alt = "preview";
+        wrap.appendChild(img);
+        mediaRow.appendChild(wrap);
       }
-      mediaRow.innerHTML = mediaHtml;
       mediaRow.dataset.built = "1";
-      mediaRow.style.display = mediaHtml ? "flex" : "none";
+      mediaRow.style.display = haveCamera || havePreview ? "flex" : "none";
     }
-    const cameraImg = root.getElementById("camera-img");
-    if (cameraImg && c.camera_entity && hass.states[c.camera_entity]) {
-      const st = hass.states[c.camera_entity];
-      const token = st.attributes.access_token;
-      if (token) {
-        cameraImg.src = `/api/camera_proxy/${c.camera_entity}?token=${token}&t=${Date.now()}`;
-      }
+    const streamEl = root.getElementById("camera-stream");
+    if (streamEl && c.camera_entity && hass.states[c.camera_entity]) {
+      streamEl.hass = hass;
+      streamEl.stateObj = hass.states[c.camera_entity];
     }
     const previewImg = root.getElementById("preview-img");
     if (previewImg && c.image_entity && hass.states[c.image_entity]) {
@@ -231,5 +275,5 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: "creality-sparkx-card",
   name: "Creality SPARKX Card",
-  description: "Status, controls and camera preview for a Creality SPARKX / K-series printer (ha-creality-sparkx).",
+  description: "Status, controls and live camera preview for a Creality SPARKX / K-series printer (ha-creality-sparkx).",
 });
