@@ -62,16 +62,19 @@ class CrealitySparkXCard extends HTMLElement {
   _fmtDuration(seconds) {
     const s = Number(seconds);
     if (!Number.isFinite(s) || s <= 0) return "-";
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    const total = Math.floor(s);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const sec = total % 60;
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${pad(h)}:${pad(m)}:${pad(sec)}`;
   }
 
   _fmtFinishTime(seconds) {
     const s = Number(seconds);
     if (!Number.isFinite(s) || s <= 0) return null;
     const finish = new Date(Date.now() + s * 1000);
-    return finish.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return finish.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
   }
 
   _stateLabel(entityId) {
