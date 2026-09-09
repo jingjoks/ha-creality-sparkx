@@ -67,6 +67,13 @@ class CrealitySparkXCard extends HTMLElement {
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
   }
 
+  _fmtFinishTime(seconds) {
+    const s = Number(seconds);
+    if (!Number.isFinite(s) || s <= 0) return null;
+    const finish = new Date(Date.now() + s * 1000);
+    return finish.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
   _stateLabel(entityId) {
     const st = this._hass.states[entityId];
     if (!st) return null;
@@ -123,7 +130,7 @@ class CrealitySparkXCard extends HTMLElement {
         <div class="media-row" id="media-row"></div>
         <div class="filename" id="filename" hidden></div>
         <div class="progress-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
-        <div class="meta-row"><span id="progress-pct">-</span><span id="time-remaining"></span></div>
+        <div class="meta-row"><span id="progress-pct">-</span><span id="time-remaining"></span><span id="finish-time"></span></div>
         <div class="pills" id="pills"></div>
         <div class="buttons" id="buttons"></div>
       </ha-card>
@@ -226,9 +233,15 @@ class CrealitySparkXCard extends HTMLElement {
     root.getElementById("progress-pct").textContent = Number.isFinite(progress)
       ? `${progress}%`
       : "-";
+    const remainingSeconds = c.time_remaining_entity
+      ? hass.states[c.time_remaining_entity]?.state
+      : null;
     root.getElementById("time-remaining").textContent = c.time_remaining_entity
-      ? this._fmtDuration(hass.states[c.time_remaining_entity]?.state)
+      ? this._fmtDuration(remainingSeconds)
       : "";
+    const finishEl = root.getElementById("finish-time");
+    const finishTime = remainingSeconds != null ? this._fmtFinishTime(remainingSeconds) : null;
+    finishEl.textContent = finishTime ? `เสร็จ ~${finishTime}` : "";
 
     // Temperature / status pills
     const pills = root.getElementById("pills");
