@@ -1,6 +1,8 @@
 """Sensor entities for the Creality SPARKX integration."""
 from __future__ import annotations
 
+import logging
+
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -18,12 +20,14 @@ from homeassistant.const import (
     UnitOfTime,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DEVICE_MANUFACTURER, DOMAIN, PRINTER_STATE_MAP
 from .coordinator import CrealitySparkXCoordinator
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def _to_float(raw: Any) -> float | None:
@@ -167,13 +171,16 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     coordinator: CrealitySparkXCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
+    entities: list[SensorEntity] = [
         CrealitySparkXSensor(coordinator, entry, desc) for desc in SENSOR_DESCRIPTIONS
-    )
+    ]
+    entities.append(CrealitySparkXIPSensor(coordinator, entry))
+    async_add_entities(entities)
 
 
 class CrealitySparkXSensor(CoordinatorEntity[CrealitySparkXCoordinator], SensorEntity):
     entity_description: CrealitySensorDescription
+    _attr_has_entity_name = True
 
     def __init__(
         self,
@@ -199,3 +206,32 @@ class CrealitySparkXSensor(CoordinatorEntity[CrealitySparkXCoordinator], SensorE
     @property
     def native_value(self):
         return self.entity_description.value_fn(self.coordinator.data)
+
+
+class CrealitySparkXIPSensor(CoordinatorEntity[CrealitySparkXCoordinator], SensorEntity):
+    """Static sensor showing the printer's configured IP address."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "ip_address"
+    _attr_icon = "mdi:ip-network"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator: CrealitySparkXCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.unique_id}_ip_address"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry.unique_id or entry.entry_id)},
+            manufacturer=DEVICE_MANUFACTURER,
+            model=coordinator.data.get("model", "SPARKX i7"),
+            name=coordinator.data.get("hostname", entry.title),
+            sw_version=coordinator.data.get("modelVersion"),
+        )
+
+    @property
+    def available(self) -> bool:
+        # IP is static/known from config even if the printer is offline.
+        return True
+
+    @property
+    def native_value(self):
+        return self.coordinator.host

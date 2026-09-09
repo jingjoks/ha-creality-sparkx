@@ -1,63 +1,67 @@
-# Creality SPARKX for Home Assistant
+# Creality SPARKX สำหรับ Home Assistant
 
-Local, cloud-free Home Assistant integration for the **Creality SPARKX i7**
-(and likely other recent Creality printers that expose the same local
-WebSocket API — see [Compatibility](#compatibility) below).
+อินทิเกรชัน Home Assistant แบบทำงานในเครือข่ายท้องถิ่น (local) ไม่ต้องพึ่งคลาวด์
+สำหรับเครื่องพิมพ์ 3 มิติ **Creality SPARKX i7**
+(และน่าจะใช้ได้กับเครื่องพิมพ์ Creality รุ่นใหม่ๆ อื่นที่เปิด WebSocket API แบบเดียวกัน — ดู
+[ความเข้ากันได้](#ความเข้ากันได้) ด้านล่าง)
 
-No account, no cloud, no API key. The printer streams its own state over a
-plain WebSocket on the local network and this integration just listens.
+ไม่ต้องสมัครบัญชี ไม่ต้องใช้คลาวด์ ไม่ต้องมี API key เครื่องพิมพ์ส่งสถานะของตัวเองผ่าน
+WebSocket ธรรมดาในเครือข่ายท้องถิ่น อินทิเกรชันนี้แค่คอยรับฟังข้อมูลนั้น
 
-**✅ Tested and confirmed working** on a real Creality SPARKX i7 — live
-temperature sensors update in real time, entities register correctly, no
-errors on setup.
+**✅ ทดสอบและยืนยันแล้วว่าใช้งานได้จริง** บนเครื่องพิมพ์ Creality SPARKX i7 — เซนเซอร์
+อุณหภูมิอัปเดตแบบเรียลไทม์ เอนทิตีลงทะเบียนถูกต้อง ไม่มีข้อผิดพลาดตอนติดตั้ง
 
-## Features
+## ฟีเจอร์
 
-- **Live sensors** — nozzle/bed temperature (current + target), print
-  progress, current layer / total layers, current filename, elapsed and
-  remaining print time, print state (idle/printing/paused/completed/error),
-  fan speeds.
-- **Lifetime stats** — total material used, total print time (disabled by
-  default, enable in entity settings if you want them).
-- **Chamber light switch** — turn the printer's light on/off from HA.
-  ⚠️ Confirmed that the printer silently ignores this command while a print
-  job is actively running (verified by testing the raw WebSocket command
-  directly against the printer, bypassing Home Assistant entirely — the
-  light state simply doesn't change and the printer's own confirmation
-  response is absent). This appears to be a firmware-level restriction, not
-  a bug in this integration. Works normally while idle.
-- **Binary sensors** — filament presence, problem/error flag, and a
-  connectivity sensor so automations can react to the printer going offline.
-- **Local push** — no polling. The printer pushes updates as they happen, so
-  state changes show up in HA almost instantly.
-- **Auto-reconnect** — if the printer reboots, changes networks, or HA
-  restarts, the integration keeps retrying the connection in the
-  background.
+- **เซนเซอร์แบบเรียลไทม์** — อุณหภูมิหัวฉีด/แท่นพิมพ์ (ค่าปัจจุบัน + ค่าเป้าหมาย)
+  ความคืบหน้าการพิมพ์ เลเยอร์ปัจจุบัน/เลเยอร์ทั้งหมด ชื่อไฟล์ที่กำลังพิมพ์ เวลาที่พิมพ์ไปแล้ว
+  และเวลาที่เหลือ สถานะการพิมพ์ (ว่าง/กำลังพิมพ์/หยุดชั่วคราว/เสร็จแล้ว/ข้อผิดพลาด)
+  ความเร็วพัดลมต่างๆ
+- **ที่อยู่ IP ของเครื่องพิมพ์** — เซนเซอร์ diagnostic แสดง IP ที่เครื่องพิมพ์เชื่อมต่ออยู่
+  สะดวกเวลาต้องเช็คว่าเครื่องพิมพ์อยู่ที่ IP ไหนโดยไม่ต้องไปเปิดหน้าจอเครื่อง
+- **ชื่อเอนทิตีอ่านง่าย** — ทุกเซนเซอร์แสดงชื่อเฉพาะของตัวเอง (เช่น "อุณหภูมิหัวฉีด",
+  "สถานะการพิมพ์") ไม่ใช่ชื่ออุปกรณ์ซ้ำๆ กันทุกแถวเหมือนก่อนหน้านี้
+- **ถอดรหัสข้อผิดพลาดของเครื่องพิมพ์** — เมื่อเซนเซอร์ "ปัญหา" (Problem) ทำงาน จะมี
+  แอตทริบิวต์เพิ่มเติมบอกรหัสข้อผิดพลาด (เช่น `FO2945`) พร้อมคำอธิบายเป็นภาษาอังกฤษ
+  ที่แปลมาจาก[ตารางรหัสข้อผิดพลาดอย่างเป็นทางการของ Creality](https://wiki.creality.com/en/sparkx/error-code)
+  ทำให้เอาไปใช้สร้างข้อความแจ้งเตือนที่มีความหมายได้ทันที (ดูตัวอย่าง Node-RED ด้านล่าง)
+- **สถิติสะสมตลอดการใช้งาน** — วัสดุที่ใช้ไปทั้งหมด เวลาพิมพ์สะสมทั้งหมด (ปิดไว้เป็นค่าเริ่มต้น
+  เปิดได้เองในหน้าตั้งค่าเอนทิตีถ้าต้องการ)
+- **สวิตช์ไฟในเครื่อง** — เปิด/ปิดไฟของเครื่องพิมพ์ได้จาก HA
+  ⚠️ ยืนยันแล้วว่าเครื่องพิมพ์จะไม่รับคำสั่งนี้ขณะกำลังพิมพ์งานอยู่ (ทดสอบโดยส่งคำสั่ง
+  WebSocket ดิบตรงไปยังเครื่องพิมพ์โดยข้าม Home Assistant ไปเลย — สถานะไฟไม่เปลี่ยนและ
+  เครื่องพิมพ์ไม่ส่งการยืนยันกลับมา) ดูเหมือนจะเป็นข้อจำกัดระดับเฟิร์มแวร์ ไม่ใช่บั๊กของ
+  อินทิเกรชันนี้ ใช้งานได้ปกติเมื่อเครื่องว่าง
+- **เซนเซอร์แบบ binary** — สถานะมีเส้นฟิลาเมนต์ สถานะปัญหา/ข้อผิดพลาด และเซนเซอร์การ
+  เชื่อมต่อ เพื่อให้ automation ตอบสนองได้เมื่อเครื่องพิมพ์หลุดออฟไลน์
+- **Local push** — ไม่มีการ polling เครื่องพิมพ์ส่งข้อมูลอัปเดตทันทีที่มีการเปลี่ยนแปลง
+  ทำให้สถานะใน HA อัปเดตเกือบจะทันที
+- **เชื่อมต่อใหม่อัตโนมัติ** — หากเครื่องพิมพ์รีบูต เปลี่ยนเครือข่าย หรือ HA รีสตาร์ท
+  อินทิเกรชันจะพยายามเชื่อมต่อใหม่อยู่เบื้องหลังให้เอง
 
-## Installation
+## การติดตั้ง
 
-### Via HACS (custom repository)
+### ผ่าน HACS (custom repository)
 
-1. HACS → Integrations → ⋮ (top right) → **Custom repositories**.
-2. Add this repository URL, category **Integration**.
-3. Search for **Creality SPARKX**, install, then restart Home Assistant.
+1. HACS → Integrations → ⋮ (มุมขวาบน) → **Custom repositories**
+2. เพิ่ม URL ของ repository นี้ เลือกประเภทเป็น **Integration**
+3. ค้นหา **Creality SPARKX** แล้วติดตั้ง จากนั้นรีสตาร์ท Home Assistant
 
-### Manual
+### ติดตั้งด้วยตนเอง
 
-1. Copy `custom_components/creality_sparkx` into your Home Assistant
-   `config/custom_components/` folder.
-2. Restart Home Assistant.
+1. คัดลอกโฟลเดอร์ `custom_components/creality_sparkx` ไปไว้ในโฟลเดอร์
+   `config/custom_components/` ของ Home Assistant
+2. รีสตาร์ท Home Assistant
 
-## Configuration
+## การตั้งค่า
 
-Settings → Devices & Services → **Add Integration** → search **Creality
-SPARKX** → enter the printer's local IP address (e.g. `192.168.1.97`).
+ไปที่ Settings → Devices & Services → **Add Integration** → ค้นหา **Creality
+SPARKX** → กรอกที่อยู่ IP ภายในเครือข่ายของเครื่องพิมพ์ (เช่น `192.168.1.97`)
 
-The integration verifies connectivity by calling the printer's `/info`
-endpoint before finishing setup, so you'll get an immediate error if the IP
-is wrong or the printer isn't reachable.
+อินทิเกรชันจะตรวจสอบการเชื่อมต่อโดยเรียก endpoint `/info` ของเครื่องพิมพ์ก่อนตั้งค่าเสร็จ
+ดังนั้นถ้า IP ผิดหรือเครื่องพิมพ์เอื้อมไม่ถึง จะขึ้นข้อผิดพลาดให้เห็นทันที
 
-## Example automation
+## ตัวอย่าง automation
 
 ```yaml
 alias: "3D print finished"
@@ -72,49 +76,66 @@ action:
       message: "{{ state_attr('sensor.i7_9120_current_file','friendly_name') }}"
 ```
 
-## Compatibility
+## ตัวอย่าง: แจ้งเตือนข้อผิดพลาดผ่าน Telegram ด้วย Node-RED
 
-This was built and tested against a **Creality SPARKX i7** (internal model
-code `F022`, firmware `1.1.5.8`), which exposes:
+Home Assistant เวอร์ชัน 2026.8.3 ขึ้นไป บังคับให้ตั้งค่าอินทิเกรชัน `telegram_bot`
+ผ่านหน้า UI (config flow) เท่านั้น ไม่รองรับการตั้งค่าแบบ YAML อีกต่อไป ถ้าใครใช้
+Node-RED อยู่แล้ว วิธีที่สะดวกกว่าคือทำ flow แจ้งเตือนใน Node-RED แทน โดยอาศัย
+แอตทริบิวต์ `code` / `description` ที่เซนเซอร์ "ปัญหา" (Problem, binary_sensor)
+ของอินทิเกรชันนี้ให้มาแล้ว
 
-- `GET /info` — device identity (mac, model, serial, firmware version), no
-  auth required.
-- `WS /ws` — a plain WebSocket, no auth, no handshake payload needed. The
-  first message is a full state snapshot; later messages are partial
-  updates (only the keys that changed). Sending a JSON object with the
-  key(s) you want to change (e.g. `{"lightSw": 0}`) issues a command.
+ไฟล์ตัวอย่างพร้อมใช้งานอยู่ที่
+[`examples/nodered-telegram-alert-flow.json`](examples/nodered-telegram-alert-flow.json)
+— นำเข้าผ่านเมนู Node-RED → Import แล้วแก้ไข 3 จุดตามคอมเมนต์ในไฟล์:
 
-Several community integrations for Creality **K1 / K1 Max / K1C / K2**
-(`ha_creality_ws`, `hass_creality_k1`, `ha-creality-lan`, etc.) describe a
-very similar JSON schema (`nozzleTemp`, `bedTemp0`, `printProgress`,
-`cfsConnect`, ...), but those printers expose it on **port 9999** rather
-than the plain HTTP port used here. If you have a printer that matches that
-port/schema, this integration probably won't connect out of the box — try
-one of those projects instead. If your printer uses port 80 like the
-SPARKX i7, this should work; please open an issue either way with your
-`/info` output so compatibility can be tracked.
+1. เปลี่ยน `entity_id` ในโหนด "Trigger" ให้ตรงกับเซนเซอร์ Problem ของเครื่องคุณ
+   (เช่น `binary_sensor.<ชื่อเครื่องพิมพ์>_problem`)
+2. ตั้งค่าโหนด `telegram bot` ให้เป็นบอทของคุณเอง (bot token จาก
+   [@BotFather](https://t.me/BotFather))
+3. ใส่ `chatId` ของคุณเองในโหนดฟังก์ชัน "Format alert"
 
-## Known limitations
+flow นี้ประกอบด้วย: โหนดดักฟังการเปลี่ยนสถานะของเซนเซอร์ Problem → โหนดฟังก์ชันที่
+ดึงรหัสข้อผิดพลาดและคำอธิบายมาแต่งเป็นข้อความ → โหนดส่ง Telegram พร้อม debug node
+ไว้เช็คโครงสร้างข้อมูลจริงเวลามีข้อผิดพลาดเกิดขึ้นครั้งแรก
 
-- **Commands may be ignored mid-print.** The chamber light switch (and
-  possibly other control commands not yet implemented here) appear to be
-  rejected by the printer's firmware while a print job is actively running.
-  The WebSocket still responds with routine status pushes, but not a
-  confirmation of the requested change, and the actual state doesn't move.
-  This was confirmed by testing the raw `{"lightSw": 1}` command directly
-  against the printer over a plain WebSocket connection, with the same
-  result — so it's a printer-side restriction, not something this
-  integration can work around. Try again once the print finishes or the
-  printer is idle.
+## ความเข้ากันได้
 
-## Disclaimer
+อินทิเกรชันนี้พัฒนาและทดสอบกับ **Creality SPARKX i7** (รหัสรุ่นภายใน `F022`
+เฟิร์มแวร์ `1.1.5.8`) ซึ่งเปิดให้ใช้งาน:
 
-This is an independent, community project and is not affiliated with or
-endorsed by Creality. It was built by reverse-engineering the printer's own
-local API traffic — no cloud account or vendor documentation was used.
-Printer control (currently just the light switch) is exposed on a best-effort
-basis; please don't rely on this integration for anything safety-critical.
+- `GET /info` — ข้อมูลประจำเครื่อง (mac, model, serial, เวอร์ชันเฟิร์มแวร์) ไม่ต้อง
+  ยืนยันตัวตน
+- `WS /ws` — WebSocket ธรรมดา ไม่ต้องยืนยันตัวตน ไม่ต้องมี handshake payload
+  ข้อความแรกคือ snapshot สถานะทั้งหมด ข้อความถัดไปเป็นการอัปเดตบางส่วน (เฉพาะคีย์ที่
+  เปลี่ยน) การส่ง JSON object พร้อมคีย์ที่ต้องการเปลี่ยน (เช่น `{"lightSw": 0}`) คือ
+  การสั่งงานเครื่องพิมพ์
 
-## License
+อินทิเกรชันของชุมชนหลายตัวสำหรับ Creality รุ่น **K1 / K1 Max / K1C / K2**
+(`ha_creality_ws`, `hass_creality_k1`, `ha-creality-lan` ฯลฯ) ใช้โครงสร้าง JSON
+คล้ายกันมาก (`nozzleTemp`, `bedTemp0`, `printProgress`, `cfsConnect` ...) แต่เครื่อง
+พิมพ์เหล่านั้นเปิดให้ใช้งานที่ **พอร์ต 9999** แทนที่จะเป็นพอร์ต HTTP ปกติแบบที่ใช้ในนี้
+ถ้าเครื่องพิมพ์ของคุณตรงกับพอร์ต/โครงสร้างแบบนั้น อินทิเกรชันนี้อาจเชื่อมต่อไม่ได้ทันที —
+ลองใช้โปรเจกต์เหล่านั้นแทน แต่ถ้าเครื่องพิมพ์ของคุณใช้พอร์ต 80 เหมือน SPARKX i7 ก็ควร
+ใช้งานได้ ไม่ว่าจะกรณีไหนก็ตาม ช่วยเปิด issue พร้อมแนบผลลัพธ์จาก `/info` ของเครื่องคุณ
+เพื่อช่วยติดตามความเข้ากันได้ด้วย
 
-MIT — see [LICENSE](LICENSE).
+## ข้อจำกัดที่ทราบอยู่แล้ว
+
+- **คำสั่งอาจถูกเมินขณะกำลังพิมพ์งาน** สวิตช์ไฟในเครื่อง (และอาจรวมถึงคำสั่งควบคุมอื่นๆ
+  ที่ยังไม่ได้ทำในอินทิเกรชันนี้) ดูเหมือนจะถูกเฟิร์มแวร์ของเครื่องพิมพ์ปฏิเสธขณะกำลังพิมพ์
+  งานอยู่ WebSocket ยังคงส่งสถานะปกติมาเรื่อยๆ แต่ไม่มีการยืนยันการเปลี่ยนแปลงตามที่สั่ง
+  และสถานะจริงก็ไม่เปลี่ยน ยืนยันแล้วโดยทดสอบส่งคำสั่ง `{"lightSw": 1}` แบบดิบตรงไปยัง
+  เครื่องพิมพ์ผ่าน WebSocket ธรรมดา ได้ผลลัพธ์เดียวกัน — จึงเป็นข้อจำกัดฝั่งเครื่องพิมพ์
+  ไม่ใช่สิ่งที่อินทิเกรชันนี้แก้ไขได้ ลองใหม่อีกครั้งเมื่อพิมพ์เสร็จหรือเครื่องว่างแล้ว
+
+## คำชี้แจง
+
+โปรเจกต์นี้เป็นโปรเจกต์อิสระของชุมชน ไม่มีความเกี่ยวข้องหรือได้รับการรับรองจาก Creality
+สร้างขึ้นจากการวิเคราะห์ทราฟฟิก API ภายในเครื่องพิมพ์เอง (reverse-engineering) ไม่ได้ใช้
+บัญชีคลาวด์หรือเอกสารจากผู้ผลิตแต่อย่างใด การควบคุมเครื่องพิมพ์ (ตอนนี้มีแค่สวิตช์ไฟ)
+เป็นการให้บริการแบบ best-effort กรุณาอย่าพึ่งพาอินทิเกรชันนี้กับงานที่เกี่ยวข้องกับความ
+ปลอดภัย
+
+## สัญญาอนุญาต
+
+MIT — ดู [LICENSE](LICENSE)

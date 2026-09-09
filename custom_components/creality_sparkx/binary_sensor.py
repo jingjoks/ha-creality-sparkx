@@ -16,7 +16,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DEVICE_MANUFACTURER, DOMAIN
+from .const import DEVICE_MANUFACTURER, DOMAIN, ERROR_CODE_MAP
 from .coordinator import CrealitySparkXCoordinator
 
 
@@ -57,6 +57,7 @@ class CrealitySparkXBinarySensor(
     CoordinatorEntity[CrealitySparkXCoordinator], BinarySensorEntity
 ):
     entity_description: CrealityBinarySensorDescription
+    _attr_has_entity_name = True
 
     def __init__(
         self,
@@ -82,6 +83,20 @@ class CrealitySparkXBinarySensor(
     def is_on(self) -> bool | None:
         return self.entity_description.value_fn(self.coordinator.data)
 
+    @property
+    def extra_state_attributes(self) -> dict[str, object] | None:
+        if self.entity_description.key != "problem":
+            return None
+        err = self.coordinator.data.get("err") or {}
+        code = err.get("value") or None
+        return {
+            "code": code,
+            "description": ERROR_CODE_MAP.get(code, "Unknown error code" if code else None),
+            "errcode": err.get("errcode"),
+            "key": err.get("key"),
+            "retry": err.get("retry"),
+        }
+
 
 class CrealitySparkXConnectivitySensor(
     CoordinatorEntity[CrealitySparkXCoordinator], BinarySensorEntity
@@ -92,6 +107,7 @@ class CrealitySparkXConnectivitySensor(
     'available' (its whole purpose is to report the connection state).
     """
 
+    _attr_has_entity_name = True
     _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
     _attr_translation_key = "connectivity"
     _attr_entity_category = EntityCategory.DIAGNOSTIC

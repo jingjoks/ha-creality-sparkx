@@ -31,3 +31,24 @@ PRINTER_STATE_MAP = {
 }
 
 DEVICE_MANUFACTURER = "Creality"
+
+# ---------------------------------------------------------------------------
+# Official SPARKX error codes, from https://wiki.creality.com/en/sparkx/error-code
+# Key = the alphanumeric code the printer reports in err.value (e.g. "CZ2768").
+# ---------------------------------------------------------------------------
+ERROR_CODE_MAP = {
+    "CZ2768": "Z-axis homing issue, may have an external disturbance",
+    "FB2944": "Feeding abnormal — filament odometer normal but the filament sensor in the extrusion assembly has not been triggered for an extended period; the PTFE tube may be disconnected",
+    "FR2939": "Filament depleted in slot, please insert filament promptly",
+    "FO2971": "Pre-loading filament abnormal, timeout when feeding filament to the designated position. Please resolve the issue and tap \"Retry\"",
+    "FR2949": "Filament unloading abnormal, filament cannot retract to the toolhead manifold. Please resolve the issue and tap \"Retry\"",
+    "FO2970": "Filament unloading abnormal, feeding motor stalled, filament cannot exit the extruder",
+    "FB2964": "Feeding abnormal, buffer not reaching full limit, filament may be ground",
+    "FB2947": "Buffer stuck at empty limit, filament may be tangled",
+    "FR0122": "External spool filament detected during use",
+    "FO0528": "Possible under-extrusion detected",
+    "FO2936": "Feeding abnormal: filament sensor in the extrusion assembly not triggered, filament not fed into the extrusion assembly",
+    "FO2945": "Possible extruder clog detected — please resolve the issue and click \"Retry\"",
+    "TR2963": "Unloading abnormal — extruder filament detection triggered, filament may be broken inside the extruder",
+    "TE2564": "Nozzle not heating as expected",
+}

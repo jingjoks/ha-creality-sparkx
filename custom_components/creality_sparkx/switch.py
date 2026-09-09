@@ -33,6 +33,7 @@ class CrealitySparkXLightSwitch(
     """Chamber/case light. Confirmed working via {"lightSw": 0|1} over the WS."""
 
     entity_description = LIGHT_SWITCH
+    _attr_has_entity_name = True
 
     def __init__(self, coordinator: CrealitySparkXCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)

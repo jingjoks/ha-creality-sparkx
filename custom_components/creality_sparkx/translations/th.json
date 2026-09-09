@@ -1,0 +1,98 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "เชื่อมต่อเครื่องพิมพ์ Creality ของคุณ",
+        "description": "กรอกที่อยู่ IP ภายในเครือข่ายของเครื่องพิมพ์ Creality SPARKX / รุ่น K-series",
+        "data": {
+          "host": "ที่อยู่ IP"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "ไม่สามารถเชื่อมต่อเครื่องพิมพ์ที่ที่อยู่นี้ได้ กรุณาตรวจสอบ IP และเครือข่ายว่าอยู่วงเดียวกันหรือไม่"
+    },
+    "abort": {
+      "already_configured": "เครื่องพิมพ์นี้ถูกตั้งค่าไว้แล้ว"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "nozzle_temperature": {
+        "name": "อุณหภูมิหัวฉีด"
+      },
+      "nozzle_target_temperature": {
+        "name": "อุณหภูมิเป้าหมายหัวฉีด"
+      },
+      "bed_temperature": {
+        "name": "อุณหภูมิแท่นพิมพ์"
+      },
+      "bed_target_temperature": {
+        "name": "อุณหภูมิเป้าหมายแท่นพิมพ์"
+      },
+      "print_progress": {
+        "name": "ความคืบหน้าการพิมพ์"
+      },
+      "print_state": {
+        "name": "สถานะการพิมพ์",
+        "state": {
+          "idle": "ว่าง",
+          "printing": "กำลังพิมพ์",
+          "paused": "หยุดชั่วคราว",
+          "completed": "พิมพ์เสร็จแล้ว",
+          "error": "ข้อผิดพลาด",
+          "self_test": "ทดสอบตัวเอง",
+          "leveling": "กำลังปรับระดับแท่นพิมพ์",
+          "heating": "กำลังทำความร้อน",
+          "unknown": "ไม่ทราบสถานะ"
+        }
+      },
+      "current_file": {
+        "name": "ไฟล์ที่กำลังพิมพ์"
+      },
+      "current_layer": {
+        "name": "เลเยอร์ปัจจุบัน"
+      },
+      "total_layers": {
+        "name": "จำนวนเลเยอร์ทั้งหมด"
+      },
+      "print_time_elapsed": {
+        "name": "เวลาที่พิมพ์ไปแล้ว"
+      },
+      "print_time_remaining": {
+        "name": "เวลาที่เหลือ"
+      },
+      "lifetime_material_used": {
+        "name": "วัสดุที่ใช้ไปทั้งหมด"
+      },
+      "lifetime_print_time": {
+        "name": "เวลาพิมพ์สะสมทั้งหมด"
+      },
+      "model_fan_speed": {
+        "name": "ความเร็วพัดลมชิ้นงาน"
+      },
+      "case_fan_speed": {
+        "name": "ความเร็วพัดลมตัวเครื่อง"
+      },
+      "ip_address": {
+        "name": "ที่อยู่ IP"
+      }
+    },
+    "binary_sensor": {
+      "filament_present": {
+        "name": "มีเส้นฟิลาเมนต์"
+      },
+      "problem": {
+        "name": "ปัญหา"
+      },
+      "connectivity": {
+        "name": "การเชื่อมต่อ"
+      }
+    },
+    "switch": {
+      "chamber_light": {
+        "name": "ไฟในเครื่อง"
+      }
+    }
+  }
+}
