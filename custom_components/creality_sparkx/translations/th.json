@@ -16,6 +16,19 @@
       "already_configured": "เครื่องพิมพ์นี้ถูกตั้งค่าไว้แล้ว"
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Creality SPARKX - ตั้งค่าขั้นสูง",
+        "description": "ทุกช่องเป็นตัวเลือก (ไม่จำเป็นต้องกรอก) การผูกกับสวิตช์ไฟจะทำให้เซนเซอร์แสดง 'ไม่พร้อมใช้งาน' แทนค่าค้างเก่าเมื่อรู้ว่าปิดไฟเครื่องพิมพ์อยู่ ส่วนพอร์ตให้แก้เฉพาะกรณีที่ Moonraker/กล้องของเครื่องพิมพ์รันอยู่คนละพอร์ตจากค่าเริ่มต้น",
+        "data": {
+          "power_switch_entity_id": "สวิตช์ไฟเครื่องพิมพ์ (ไม่บังคับ)",
+          "moonraker_port": "พอร์ต Moonraker",
+          "camera_port": "พอร์ตกล้อง (WebRTC)"
+        }
+      }
+    }
+  },
   "entity": {
     "sensor": {
       "nozzle_temperature": {
@@ -87,11 +100,35 @@
       },
       "connectivity": {
         "name": "การเชื่อมต่อ"
+      },
+      "cfs_connected": {
+        "name": "เชื่อมต่อ CFS"
       }
     },
     "switch": {
       "chamber_light": {
         "name": "ไฟในเครื่อง"
+      }
+    },
+    "button": {
+      "pause_print": {
+        "name": "หยุดพิมพ์ชั่วคราว"
+      },
+      "resume_print": {
+        "name": "พิมพ์ต่อ"
+      },
+      "cancel_print": {
+        "name": "ยกเลิกการพิมพ์"
+      }
+    },
+    "image": {
+      "print_preview": {
+        "name": "ภาพตัวอย่างงานพิมพ์"
+      }
+    },
+    "camera": {
+      "printer_camera": {
+        "name": "กล้อง"
       }
     }
   }

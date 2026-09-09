@@ -38,6 +38,20 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[CrealityBinarySensorDescription, ...] = (
         device_class=BinarySensorDeviceClass.PROBLEM,
         value_fn=lambda d: bool((d.get("err") or {}).get("errcode", 0)),
     ),
+    CrealityBinarySensorDescription(
+        key="cfs_connected",
+        translation_key="cfs_connected",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:tray-full",
+        # `cfsConnect` is reported by the printer's WS state whether or not a
+        # Creality Filament System box is actually attached (0 when none is
+        # plugged in on this SPARKX i7) - this just surfaces that flag.
+        # Per-box/per-slot CFS sensors (as the K-series ha_creality_ws
+        # integration has) aren't implemented since there's no CFS hardware
+        # available to confirm the per-slot field layout against.
+        value_fn=lambda d: bool(d.get("cfsConnect")),
+    ),
 )
 
 
@@ -77,7 +91,7 @@ class CrealitySparkXBinarySensor(
 
     @property
     def available(self) -> bool:
-        return self.coordinator.available
+        return self.coordinator.available and self.coordinator.printer_powered_on
 
     @property
     def is_on(self) -> bool | None:

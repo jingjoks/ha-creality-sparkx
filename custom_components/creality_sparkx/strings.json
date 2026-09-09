@@ -16,6 +16,19 @@
       "already_configured": "This printer is already configured."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Creality SPARKX - advanced settings",
+        "description": "All optional. Binding a power switch lets sensors show 'unavailable' instead of a stale reading when the printer's mains power is known to be off. Only change the ports if your printer's Moonraker/camera services run somewhere other than the defaults.",
+        "data": {
+          "power_switch_entity_id": "Power switch (optional)",
+          "moonraker_port": "Moonraker port",
+          "camera_port": "Camera (WebRTC) port"
+        }
+      }
+    }
+  },
   "entity": {
     "sensor": {
       "nozzle_temperature": {
@@ -87,11 +100,35 @@
       },
       "connectivity": {
         "name": "Connectivity"
+      },
+      "cfs_connected": {
+        "name": "CFS connected"
       }
     },
     "switch": {
       "chamber_light": {
         "name": "Chamber light"
+      }
+    },
+    "button": {
+      "pause_print": {
+        "name": "Pause print"
+      },
+      "resume_print": {
+        "name": "Resume print"
+      },
+      "cancel_print": {
+        "name": "Cancel print"
+      }
+    },
+    "image": {
+      "print_preview": {
+        "name": "Print preview"
+      }
+    },
+    "camera": {
+      "printer_camera": {
+        "name": "Camera"
       }
     }
   }

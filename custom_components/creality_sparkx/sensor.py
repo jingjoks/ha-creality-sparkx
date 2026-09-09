@@ -201,7 +201,7 @@ class CrealitySparkXSensor(CoordinatorEntity[CrealitySparkXCoordinator], SensorE
 
     @property
     def available(self) -> bool:
-        return self.coordinator.available
+        return self.coordinator.available and self.coordinator.printer_powered_on
 
     @property
     def native_value(self):
@@ -235,3 +235,4 @@ class CrealitySparkXIPSensor(CoordinatorEntity[CrealitySparkXCoordinator], Senso
     @property
     def native_value(self):
         return self.coordinator.host
+
